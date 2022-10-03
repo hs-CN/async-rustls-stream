@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 rustls = "0.20.6"
-futures-lite = "1.12.0"
+futures-io = "0.3.24"
 
 [dev-dependencies]
 blocking = "1.2.0"
@@ -15,3 +15,5 @@ async-io = "1.9.0"
 async-executor = "1.4.1"
 rustls-pemfile = "1.0.1"
 webpki-roots = "0.22.5"
+futures-lite = "1.12.0"
+async-net = "1.7.0"

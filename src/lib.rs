@@ -1,10 +1,11 @@
-use futures_lite::{AsyncRead, AsyncWrite};
+use futures_io::{AsyncRead, AsyncWrite};
 use rustls::{
     server::{Accepted, Acceptor, ClientHello},
     ClientConfig, ClientConnection, ConnectionCommon, ServerConfig, ServerConnection, ServerName,
     SideData, Stream,
 };
 use std::{
+    future::Future,
     io::{self, Read, Write},
     ops::{Deref, DerefMut},
     pin::Pin,
@@ -12,7 +13,6 @@ use std::{
     task::{Context, Poll},
 };
 
-pub use futures_lite::*;
 pub use rustls::*;
 
 struct InnerStream<'a, 'b, T> {
@@ -124,13 +124,10 @@ where
         cx: &mut std::task::Context<'_>,
         buf: &[u8],
     ) -> std::task::Poll<std::io::Result<usize>> {
-        let (connection, async_stream) = (*self).get_mut();
+        let (connection, stream) = (*self).get_mut();
         let mut stream = Stream {
             conn: connection,
-            sock: &mut InnerStream {
-                cx,
-                stream: async_stream,
-            },
+            sock: &mut InnerStream { cx, stream },
         };
         match stream.write(buf) {
             Err(err) if err.kind() == io::ErrorKind::WouldBlock => Poll::Pending,
@@ -143,13 +140,10 @@ where
         cx: &mut std::task::Context<'_>,
         bufs: &[std::io::IoSlice<'_>],
     ) -> std::task::Poll<std::io::Result<usize>> {
-        let (connection, async_stream) = (*self).get_mut();
+        let (connection, stream) = (*self).get_mut();
         let mut stream = Stream {
             conn: connection,
-            sock: &mut InnerStream {
-                cx,
-                stream: async_stream,
-            },
+            sock: &mut InnerStream { cx, stream },
         };
         match stream.write_vectored(bufs) {
             Err(err) if err.kind() == io::ErrorKind::WouldBlock => Poll::Pending,
@@ -161,13 +155,10 @@ where
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
-        let (connection, async_stream) = (*self).get_mut();
+        let (connection, stream) = (*self).get_mut();
         let mut stream = Stream {
             conn: connection,
-            sock: &mut InnerStream {
-                cx,
-                stream: async_stream,
-            },
+            sock: &mut InnerStream { cx, stream },
         };
         match stream.flush() {
             Err(err) if err.kind() == io::ErrorKind::WouldBlock => Poll::Pending,

@@ -1,21 +1,13 @@
 use crate::{TlsAccepted, TlsConnector};
 use async_executor::Executor;
-use async_io::{Async, Timer};
 use futures_lite::prelude::*;
 use rustls::ServerConfig;
-use std::{
-    io::Cursor,
-    net::{Ipv4Addr, TcpListener, TcpStream},
-    sync::Arc,
-    time::Duration,
-};
+use std::{io::Cursor, net::Ipv4Addr, sync::Arc, time::Duration};
 
 static EX: Executor = Executor::new();
 
 #[test]
 fn server_client_test() {
-    let mut tasks = Vec::new();
-
     let ca_cert: Vec<_> = rustls_pemfile::certs(&mut Cursor::new(include_bytes!("../cert/ca.crt")))
         .unwrap()
         .into_iter()
@@ -34,12 +26,14 @@ fn server_client_test() {
         .with_single_cert(ca_cert.clone(), ca_key[0].clone())
         .unwrap();
     let server_config = Arc::new(server_config);
-    let _server_task = EX.spawn(async move {
-        let listener = Async::<TcpListener>::bind((Ipv4Addr::LOCALHOST, 4443)).unwrap();
+    EX.spawn(async move {
+        let listener = async_net::TcpListener::bind((Ipv4Addr::LOCALHOST, 4443))
+            .await
+            .unwrap();
         loop {
             let (stream, _remote_addr) = listener.accept().await.unwrap();
             let server_config = server_config.clone();
-            let _handle_task = EX.spawn(async move {
+            EX.spawn(async move {
                 let accept = TlsAccepted::accept(stream).await.unwrap();
                 let mut stream = accept.into_stream(server_config.clone()).unwrap();
                 stream.flush().await.unwrap();
@@ -51,10 +45,11 @@ fn server_client_test() {
 
                 stream.write_all(&buf[..n]).await.unwrap();
                 stream.flush().await.unwrap();
-            });
-            tasks.push(_handle_task);
+            })
+            .detach();
         }
-    });
+    })
+    .detach();
 
     let mut root_store = rustls::RootCertStore::empty();
     root_store.add(&ca_cert[0]).unwrap();
@@ -67,12 +62,12 @@ fn server_client_test() {
     let server_name = "test.com".try_into().unwrap();
     let client_task = EX.spawn(async move {
         let connector = TlsConnector::new(config.clone(), server_name).unwrap();
-        let stream = Async::<TcpStream>::connect((Ipv4Addr::LOCALHOST, 4443))
+        let stream = async_net::TcpStream::connect((Ipv4Addr::LOCALHOST, 4443))
             .await
             .unwrap();
         let mut stream = connector.connect(stream);
         stream.flush().await.unwrap();
-        Timer::after(Duration::from_millis(1)).await;
+        async_io::Timer::after(Duration::from_millis(1)).await;
 
         let line = "server and client test";
         stream.write_all(line.as_bytes()).await.unwrap();
