@@ -3,7 +3,7 @@
 //! # Examples
 //!
 //! **Server**
-//! ```no_run
+//! ```ignore
 //! let listener = async_net::TcpListener::bind((Ipv4Addr::LOCALHOST, 4443)).await.unwrap();
 //! let (stream, remote_addr) = listener.accept().await.unwrap();
 //!
@@ -18,7 +18,7 @@
 //!
 //! **Client**
 //!
-//! ```no_run
+//! ```ignore
 //! let server_name = "test.com".try_into().unwrap();
 //! let client_config = Arc::new(client_config);
 //! let connector = TlsConnector::new(client_config.clone(), server_name).unwrap();

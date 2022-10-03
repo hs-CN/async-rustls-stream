@@ -4,7 +4,7 @@ An async tls stream library based on rustls and futures-io. Both for server/clie
 
 ## Server
 
-```no_run
+```rust
 let listener = async_net::TcpListener::bind((Ipv4Addr::LOCALHOST, 4443)).await.unwrap();
 let (stream, remote_addr) = listener.accept().await.unwrap();
 // Recv Client Hello
@@ -17,7 +17,7 @@ stream.flush().await.unwrap();
 
 ## Client
 
-```no_run
+```rust
 let server_name = "test.com".try_into().unwrap();
 let client_config = Arc::new(client_config);
 let connector = TlsConnector::new(client_config.clone(), server_name).unwrap();
