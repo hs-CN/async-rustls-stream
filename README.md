@@ -2,8 +2,6 @@
 
 An async tls stream library based on rustls and futures-io. Both for server/client.
 
-# Examples
-
 ## Server
 
 ```no_run
