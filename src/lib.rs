@@ -1,3 +1,36 @@
+//! An async tls stream library based on rustls and futures-io. Both for server/client.
+//!
+//! # Examples
+//!
+//! **Server**
+//! ```no_run
+//! let listener = async_net::TcpListener::bind((Ipv4Addr::LOCALHOST, 4443)).await.unwrap();
+//! let (stream, remote_addr) = listener.accept().await.unwrap();
+//!
+//! // Recv Client Hello
+//! let accept = TlsAccepted::accept(stream).await.unwrap();
+//!
+//! let server_config = Arc::new(server_config);
+//! let mut stream = accept.into_stream(server_config.clone()).unwrap();
+//! // handshake completed
+//! stream.flush().await.unwrap();
+//! ```
+//!
+//! **Client**
+//!
+//! ```no_run
+//! let server_name = "test.com".try_into().unwrap();
+//! let client_config = Arc::new(client_config);
+//! let connector = TlsConnector::new(client_config.clone(), server_name).unwrap();
+//!
+//! let stream = async_net::TcpStream::connect((Ipv4Addr::LOCALHOST, 4443)).await.unwrap();
+//!
+//! let mut stream = connector.connect(stream);
+//! // handshake completed
+//! stream.flush().await.unwrap();
+//! ```
+//! or [examples](https://github.com/hs-CN/async-rustls-stream/blob/master/examples).
+
 use futures_io::{AsyncRead, AsyncWrite};
 use rustls::{
     server::{Accepted, Acceptor, ClientHello},
@@ -12,8 +45,6 @@ use std::{
     sync::Arc,
     task::{Context, Poll},
 };
-
-pub use rustls::*;
 
 struct InnerStream<'a, 'b, T> {
     cx: &'a mut Context<'b>,
@@ -59,6 +90,7 @@ impl<'a, 'b, T: AsyncWrite + Unpin> Write for InnerStream<'a, 'b, T> {
     }
 }
 
+/// Tls Stream Implement [`AsyncRead`] and [`AsyncWrite`]
 pub struct TlsStream<C, T> {
     connection: C,
     stream: T,
@@ -174,6 +206,11 @@ where
     }
 }
 
+/// Tls Client Connector.
+///
+/// Use [`TlsConnector::connect()`] to get [`TlsStream`] for client.
+///
+/// Then use [`TlsStream`]::flush() to finish the handshake.
 pub struct TlsConnector(ClientConnection);
 
 impl TlsConnector {
@@ -182,6 +219,7 @@ impl TlsConnector {
         Ok(Self(connection))
     }
 
+    /// The `stream` generally should implement [`AsyncRead`] and [`AsyncWrite`].
     pub fn connect<T>(self, stream: T) -> TlsStream<ClientConnection, T> {
         TlsStream {
             connection: self.0,
@@ -190,16 +228,25 @@ impl TlsConnector {
     }
 }
 
+/// Tls Server Accept the `Client Hello` and finish the handshake.
+///
+/// Use [`TlsAccepted::accept()`] to receive the `Client Hello`.
+///
+/// Then use [`TlsAccepted::into_stream()`] to get [`TlsStream`].
+///
+/// Then use [`TlsStream`]::flush() to finish the handshake.
 pub struct TlsAccepted<T> {
     accepted: Accepted,
     stream: T,
 }
 
 impl<T> TlsAccepted<T> {
+    /// Get the [`ClientHello`] received form client.
     pub fn client_hello(&self) -> ClientHello {
         self.accepted.client_hello()
     }
 
+    /// Convert Into [`TlsStream`] with [`ServerConfig`].
     pub fn into_stream(
         self,
         config: Arc<ServerConfig>,
@@ -216,6 +263,7 @@ impl<T> TlsAccepted<T>
 where
     T: AsyncRead + Unpin,
 {
+    /// Receive `Client Hello`. The `stream` generally should implement [`AsyncRead`] and [`AsyncWrite`].
     pub async fn accept(mut stream: T) -> io::Result<TlsAccepted<T>> {
         let accepted = AcceptFuture {
             acceptor: Acceptor::new().unwrap(),
