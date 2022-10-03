@@ -1,0 +1,30 @@
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+req_extensions     = req_ext
+
+[ req_distinguished_name ]
+countryName                 = Country Name (2 letter code)
+countryName_default         = CN
+stateOrProvinceName         = State or Province Name (full name)
+stateOrProvinceName_default = CN
+localityName                = Locality Name (eg, city)
+localityName_default        = CN
+organizationName            = Organization Name (eg, company)
+organizationName_default    = CN
+organizationalUnitName            = Organizational Unit Name (eg, section)
+organizationalUnitName_default    = CN
+commonName                  = Common Name (e.g. server FQDN or YOUR name)
+commonName_max              = 64
+commonName_default          = test.com
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+# 此段落标题的方括号两边【没有空格】，只有同时配有IP和域名，才能在IP和域名访问时都成功识别。
+[alt_names]
+DNS.1   = test.com
+DNS.2   = test.net
+DNS.3   = test.org
+DNS.4   = test.io
+DNS.4   = test.edu
