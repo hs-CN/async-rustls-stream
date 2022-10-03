@@ -1,4 +1,4 @@
-//! An async tls stream library based on rustls and futures-io. Both for server/client.
+//! An async tls stream library based on [rustls] and [futures_io]. Both for server/client.
 //!
 //! # Examples
 //!
@@ -90,7 +90,7 @@ impl<'a, 'b, T: AsyncWrite + Unpin> Write for InnerStream<'a, 'b, T> {
     }
 }
 
-/// Tls Stream Implement [`AsyncRead`] and [`AsyncWrite`]
+/// Tls Stream Implement [AsyncRead] and [AsyncWrite]
 pub struct TlsStream<C, T> {
     connection: C,
     stream: T,
@@ -208,9 +208,9 @@ where
 
 /// Tls Client Connector.
 ///
-/// Use [`TlsConnector::connect()`] to get [`TlsStream`] for client.
+/// Use [TlsConnector::connect()] to get [TlsStream] for client.
 ///
-/// Then use [`TlsStream`]::flush() to finish the handshake.
+/// Then use [TlsStream]::flush() to finish the handshake.
 pub struct TlsConnector(ClientConnection);
 
 impl TlsConnector {
@@ -219,7 +219,7 @@ impl TlsConnector {
         Ok(Self(connection))
     }
 
-    /// The `stream` generally should implement [`AsyncRead`] and [`AsyncWrite`].
+    /// The `stream` generally should implement [AsyncRead] and [AsyncWrite].
     pub fn connect<T>(self, stream: T) -> TlsStream<ClientConnection, T> {
         TlsStream {
             connection: self.0,
@@ -232,9 +232,9 @@ impl TlsConnector {
 ///
 /// Use [`TlsAccepted::accept()`] to receive the `Client Hello`.
 ///
-/// Then use [`TlsAccepted::into_stream()`] to get [`TlsStream`].
+/// Then use [TlsAccepted::into_stream()] to get [TlsStream].
 ///
-/// Then use [`TlsStream`]::flush() to finish the handshake.
+/// Then use [TlsStream]::flush() to finish the handshake.
 pub struct TlsAccepted<T> {
     accepted: Accepted,
     stream: T,
@@ -263,7 +263,7 @@ impl<T> TlsAccepted<T>
 where
     T: AsyncRead + Unpin,
 {
-    /// Receive `Client Hello`. The `stream` generally should implement [`AsyncRead`] and [`AsyncWrite`].
+    /// Receive `Client Hello`. The `stream` generally should implement [AsyncRead] and [AsyncWrite].
     pub async fn accept(mut stream: T) -> io::Result<TlsAccepted<T>> {
         let accepted = AcceptFuture {
             acceptor: Acceptor::new().unwrap(),

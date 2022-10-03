@@ -1,6 +1,6 @@
 # Description
 
-An async tls stream library based on rustls and futures-io. Both for server/client.
+An async tls stream library based on [rustls](https://crates.io/crates/rustls) and [futures-io](https://crates.io/crates/futures-io). Both for server/client.
 
 ## Server
 
